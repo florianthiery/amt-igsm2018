@@ -4,7 +4,7 @@
 
 **Florian Thiery<sup>1,2</sup>**
 
-<sup>1</sup> Florian Thiery M.Sc. `thiery@rgzm.de` <a href="https://orcid.org/0000-0002-3246-3531" target="orcid.widget" rel="noopener noreferrer" style="vertical-align:top;"><img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">orcid.org/0000-0002-3246-3531</a>
+<sup>1</sup> Florian Thiery M.Sc. `mail@florian-thiery.de` <a href="https://orcid.org/0000-0002-3246-3531" target="orcid.widget" rel="noopener noreferrer" style="vertical-align:top;"><img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">orcid.org/0000-0002-3246-3531</a>
 
 <sup>2</sup> Römisch-Germanisches Zentralmuseum Mainz, Leibniz-Forschungsinstitut für Archäologie [`rgzm.de`](http://rgzm.de/), Kompetenzbereich Wissenschaftliche IT
 
