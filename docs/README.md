@@ -1,4 +1,4 @@
-# The IGSM Network - Modelling and deriving an IGSM network using Linked Data techniques
+# Do you know each other? Calculate an IGSM network using Semantic Web techniques
 
 ## IGSM 2018, Valencia, Spain
 
