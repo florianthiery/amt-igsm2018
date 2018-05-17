@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>AMT | CAA2018 Example</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript" src="js/amt.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.20.0/vis.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.20.0/vis.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            overflow: hidden;
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+
+        #footer {
+            height: 100px;
+            color: black;
+        }
+
+        #graph {
+            height: calc(100% - 100px);
+        }
+
+        .description {
+            margin-left: 25px;
+        }
+
+        .modal {
+            width: 90% !important;
+            height: 100% !important;
+        }
+    </style>
+    <script>
+        var IGSM = {};
+        IGSM.prefix = "http://github.com/florianthiery/amt-igsm2018#";
+        IGSM.graph = {};
+        IGSM.edit = false;
+        IGSM.thisNodes = [];
+        IGSM.thisEdges = [];
+        IGSM.inverse = false;
+        var update = function() {
+            if (IGSM.amt) {
+                var updated = IGSM.amt.getGraph(!IGSM.edit, true);
+                IGSM.graph.edges.clear();
+                IGSM.graph.nodes.clear();
+                /*
+                	Hier wird spezifiziert, wie die Knoten aussehen sollen
+                */
+                for (var i in updated.nodes) {
+                    updated.nodes[i].length = 10 / updated.nodes[i].width;
+                    if (!IGSM.edit) {
+                        updated.nodes[i].chosen = false;
+                    }
+                    if (updated.nodes[i].concept.includes("Place")) {
+                        updated.nodes[i].color = {
+                            background: 'SpringGreen',
+                            border: 'SpringGreen',
+                            highlight: {
+                                background: 'white',
+                                border: 'red'
+                            }
+                        };
+                        updated.nodes[i].shape = "box";
+                        //updated.nodes[i].shape = "image";
+                        //updated.nodes[i].image = "img/" + updated.nodes[i].label + ".jpg";
+                    } else if (updated.nodes[i].concept.includes("Resource")) {
+                        updated.nodes[i].color = {
+                            background: 'blue',
+                            border: 'blue',
+                            highlight: {
+                                background: 'white',
+                                border: 'red'
+                            }
+                        };
+                        updated.nodes[i].shape = "shape";
+                        //updated.nodes[i].shape = "image";
+                        //updated.nodes[i].image = "img/" + updated.nodes[i].label + ".jpg";
+                    } else {
+                        updated.nodes[i].color = {
+                            background: 'grey',
+                            border: 'black',
+                            highlight: {
+                                background: 'white',
+                                border: 'black'
+                            }
+                        };
+                        updated.nodes[i].shape = "box";
+                    }
+                }
+                /*
+                	Hier wird spezifiziert wie die Kanten aussehen sollen, welche angezeigt werden sollen, etc
+                */
+                console.info("load edges");
+                for (var i in updated.edges) {
+                    updated.edges[i].arrowStrikethrough = false;
+                    updated.edges[i].chosen = false;
+                    if (updated.edges[i].width < 0.01) {
+                        updated.edges[i].hidden = true;
+                    }
+                    var roleWithPrefix = IGSM.prefix;
+                    if (updated.edges[i].role === roleWithPrefix + "contains") {
+                        updated.edges[i].color = {
+                            color: "Crimson",
+                            highlight: "black"
+                        };
+                        updated.edges[i].arrows = "to";
+                        updated.edges[i].length = 200;
+                        updated.edges[i].smooth = true;
+                    } else if (updated.edges[i].role === roleWithPrefix + "north") {
+                        updated.edges[i].color = {
+                            color: "CornflowerBlue",
+                            highlight: "black"
+                        };
+                        updated.edges[i].arrows = "to";
+                        updated.edges[i].length = 400;
+                        updated.edges[i].smooth = true;
+                    } else if (updated.edges[i].role === roleWithPrefix + "west") {
+                        updated.edges[i].color = {
+                            color: "DarkGreen",
+                            highlight: "black"
+                        };
+                        updated.edges[i].arrows = "to";
+                        updated.edges[i].length = 400;
+                        updated.edges[i].smooth = true;
+                    } else if (updated.edges[i].role === roleWithPrefix + "inside") {
+                        updated.edges[i].hidden = true;
+                    } else if (updated.edges[i].role === roleWithPrefix + "south") {
+                        updated.edges[i].hidden = true;
+                    } else if (updated.edges[i].role === roleWithPrefix + "east") {
+                        updated.edges[i].hidden = true;
+                    } else if (updated.edges[i].role === roleWithPrefix + "sameAs") {
+                        updated.edges[i].color = {
+                            color: "DarkGreen",
+                            highlight: "black"
+                        };
+                        updated.edges[i].dashes = true;
+                        updated.edges[i].length = 200;
+                        updated.edges[i].smooth = true;
+                    } else {
+                        updated.edges[i].color = {
+                            color: "black",
+                            highlight: "black"
+                        };
+                        updated.edges[i].dashes = true;
+                    }
+                    if (!updated.edges[i].hidden) {
+                        console.log(updated.edges[i].role, updated.edges[i].width);
+                    }
+                }
+                IGSM.graph.nodes.update(updated.nodes);
+                IGSM.graph.edges.update(updated.edges);
+                IGSM.thisNodes = updated.nodes;
+                IGSM.thisEdges = updated.edges;
+            }
+        };
+        var edit = function() {
+            IGSM.edit = !IGSM.edit;
+            $(".edit").toggle();
+            $(".normal").toggle();
+            if (IGSM.edit) {
+                $("#r-but").show();
+                $("#e-but").hide();
+            } else {
+                $("#r-but").hide();
+                $("#e-but").show();
+            }
+            update();
+        };
+        var cancel = function() {
+            IGSM.amt.cancel();
+            $("#store").hide();
+            edit();
+        };
+        var save = function() {
+            IGSM.amt.save(function() {
+                location.reload();
+            });
+        }
+        var openModal = function(id, type) {
+            $("#uri").val("");
+            if (id) {
+                $("#uri").val(id);
+                var graph = IGSM.amt.getGraph(false, true);
+                var node = false;
+                for (var i in graph.nodes) {
+                    if (graph.nodes[i].id == id)
+                        node = graph.nodes[i];
+                }
+                type = node.concept;
+                $("#label").val(node.label);
+            }
+            $("#concept").val(type);
+            $("#role").empty();
+            $("#table").empty();
+            var concepts = IGSM.amt.getConcepts();
+            for (var i in concepts) {
+                if (concepts[i].concept == type) {
+                    $("#label").attr("placeholder", concepts[i].placeholder);
+                }
+            }
+            $("#role").append("<option value='' disabled selected>Rolle wählen ...</option>");
+            var roles = IGSM.amt.getRoles();
+            for (var i in roles) {
+                if (roles[i].domain == type) {
+                    var role = roles[i].role;
+                    var caaprefix = IGSM.prefix;
+                    if (role===caaprefix+"contains" || role===caaprefix+"north" || role===caaprefix+"west" || role===caaprefix+"sameAs") {
+                        $("#role").append("<option value='"+roles[i].role+"'>"+roles[i].label+"</option>");
+                    }
+                }
+            }
+            $("#role").on("change", function() {
+                $("#table").empty();
+                var concept = "";
+                for (var i in roles) {
+                    if (roles[i].role == $("#role").val()) {
+                        concept = roles[i].range;
+                    }
+                }
+                var graph = IGSM.amt.getGraph(false, true);
+                for (var i in graph.nodes) {
+                    if (graph.nodes[i].concept == concept) {
+                        var w = 0;
+                        if (id) {
+                            for (var j in graph.edges) {
+                                if (graph.edges[j].role == $("#role").val() && graph.edges[j].from == id && graph.edges[j].to == graph.nodes[i].id)
+                                    w = graph.edges[j].width;
+                            }
+                        }
+                        var tr = $("<tr></tr>");
+                        tr.append("<td>" + graph.nodes[i].label + "</td>");
+                        tr.append("<td><p class='range-field'><input type='range' name='" + graph.nodes[i].id + "' min='0' max='100' value='" + w * 100 + "' /></p></td>");
+                        $("#table").append(tr);
+                    }
+                }
+            });
+            $("#role").material_select();
+            $("#modal").modal("open");
+        };
+        var remove = function() {
+            var from = $("#uri").val();
+            if (from) {
+                $("#save").show();
+                if (!IGSM.amt.removeIndividual(from)) {
+                    console.log("Inkonsistenz vorhanden");
+                }
+            }
+            $("#store").show();
+            $("#modal").modal("close");
+            $("#label").val("");
+            update();
+        }
+        var cancelEdit = function() {
+            $("#modal").modal("close");
+            $("#label").val("");
+        };
+        var saveEdit = function() {
+            var role = $("#role").val();
+            var from = $("#uri").val();
+            if (!from) {
+                from = IGSM.amt.addIndividual($("#label").val(), $("#concept").val());
+            }
+            $("#save").show();
+            $("#table tr td input").each(function(i) {
+                var w = Math.floor(Number($(this).val()));
+                var to = $(this).attr("name");
+                var inconsistent = false;
+                if (!IGSM.amt.editAssertion(role, from, to, w / 100)) {
+                    if (!inconsistent)
+                        console.log("Inkonsistenz vorhanden");
+                    inconsistent = true;
+                }
+            });
+            $("#store").show();
+            $("#modal").modal("close");
+            $("#label").val("");
+            update();
+        };
+        $(function() {
+            IGSM.amt = new AMT();
+            IGSM.amt.load(function() {
+                var concepts = IGSM.amt.getConcepts();
+                for (var i in concepts) {
+                    var a = $("<a class='btn-floating btn-large edit green' onclick='openModal(false,\"" + concepts[i].concept + "\")' title='Add " + concepts[i].label + " node'><i class='material-icons'>add" + concepts[i].label.substr(
+                        0, 1) + "</i></a>");
+                    $("#buttons").prepend(a);
+                }
+                $(".edit").hide();
+                $("#r-but").show();
+                $("#e-but").hide();
+                var graph = IGSM.amt.getGraph(false, true);
+                IGSM.graph.nodes = new vis.DataSet(graph.nodes);
+                IGSM.graph.edges = new vis.DataSet(graph.edges);
+                var network = new vis.Network(document.getElementById("graph"), {
+                    nodes: IGSM.graph.nodes,
+                    edges: IGSM.graph.edges
+                }, {});
+                network.on("selectNode", function(params) {
+                    if (IGSM.edit)
+                        openModal(params.nodes[0]);
+                });
+                switchOntology();
+                info();
+            });
+            $("#modal").modal({
+                complete: cancelEdit
+            });
+            $("#info").modal({
+                complete: function() {
+                    info(true);
+                }
+            });
+            $("#exportModal").modal({
+                complete: function() {
+                    exportOptions(true);
+                }
+            });
+            $("#loadModal").modal({
+                complete: function() {
+                    loadJSONGraph(true);
+                }
+            });
+            $("#propertiesModal").modal({
+                dismissible: false,
+                complete: function() {
+                    loadJSONGraph(true);
+                }
+            });
+            $("#graphPropModal").modal({
+                dismissible: false,
+                complete: function() {
+                    openGraphPropModal(true);
+                }
+            });
+            $(".edit").hide();
+            $("#store").hide();
+        });
+        var switchOntology = function() {
+            CAA = {};
+            IGSM.prefix = "http://github.com/florianthiery/amt-igsm2018#";
+            IGSM.ontology = $("#ontology").val();
+            IGSM.graph = {};
+            IGSM.edit = true;
+            IGSM.thisNodes = [];
+            IGSM.thisEdges = [];
+            IGSM.amt = new AMT();
+            IGSM.amt.setStore("http://ls-dev.i3mainz.hs-mainz.de/rdf4j-server/repositories/amtigsm2018");
+            console.log(IGSM);
+            IGSM.amt.load(function() {
+                var concepts = IGSM.amt.getConcepts();
+                $("#buttons .green").remove();
+                for (var i in concepts) {
+                    var a = $("<a class='btn-floating btn-large edit green' onclick='openModal(false,\"" + concepts[i].concept + "\")' title='Add " + concepts[i].label + " node'><i class='material-icons'>add " + concepts[i].label.substr(
+                        0, 1) + "</i></a>");
+                    $("#buttons").prepend(a);
+                }
+                $(".edit").show();
+                var graph = IGSM.amt.getGraph(true);
+                IGSM.graph.nodes = new vis.DataSet(graph.nodes);
+                IGSM.graph.edges = new vis.DataSet(graph.edges);
+                var network = new vis.Network(document.getElementById("graph"), {
+                    nodes: IGSM.graph.nodes,
+                    edges: IGSM.graph.edges
+                }, {});
+                network.on("selectNode", function(params) {
+                    if (IGSM.edit)
+                        openModal(params.nodes[0]);
+                });
+                update();
+            });
+            $("#modal").modal({
+                complete: cancelEdit
+            });
+            $("#info").modal({
+                complete: function() {
+                    info(true);
+                }
+            });
+            $("#exportModal").modal({
+                complete: function() {
+                    exportOptions(true);
+                }
+            });
+            $("#loadModal").modal({
+                complete: function() {
+                    loadJSONGraph(true);
+                }
+            });
+            $("#propertiesModal").modal({
+                dismissible: false,
+                complete: function() {
+                    propModal(true);
+                }
+            });
+            $("#graphPropModal").modal({
+                dismissible: false,
+                complete: function() {
+                    openGraphPropModal(true);
+                }
+            });
+            $(".edit").hide();
+            $("#store").hide();
+        };
+        var info = function(close) {
+            if (close)
+                $("#info").modal("close");
+            else
+                $("#info").modal("open");
+        }
+        var exportOptions = function(close) {
+            if (close)
+                $("#exportModal").modal("close");
+            else
+                $("#exportModal").modal("open");
+        }
+        var loadJSONGraph = function(close) {
+            $("#json").val("");
+            $("#json").height(75);
+            if (close)
+                $("#loadModal").modal("close");
+            else
+                $("#loadModal").modal("open");
+        }
+        var propModal = function(close) {
+            $("#ontology").material_select();
+            $("#ontology").val(IGSM.ontology);
+            if (close)
+                $("#propertiesModal").modal("close");
+            else
+                $("#propertiesModal").modal("open");
+        }
+        var openGraphPropModal = function(close) {
+            $("#exportModal").modal("close");
+            if (close)
+                $("#graphPropModal").modal("close");
+            else
+                $("#graphPropModal").modal("open");
+        }
+        var reloadGraphWithProperties = function() {
+            update();
+            $("#graphPropModal").modal("close");
+        }
+        var exportData = function(type, kind) {
+            if (type === "json") {
+                var nodesAndEdges = {};
+                nodesAndEdges.nodes = IGSM.thisNodes;
+                nodesAndEdges.edges = IGSM.thisEdges;
+                nodesAndEdges = JSON.stringify(nodesAndEdges);
+                if (nodesAndEdges.includes("Infinity")) {
+                    nodesAndEdges = nodesAndEdges.replace("Infinity", 1.0);
+                }
+                // COPY TO CLIPBOARD
+                $("#hiddenclipboard").text(nodesAndEdges);
+                copyToClipboard('#hiddenclipboard');
+                // CLOSE MODAL
+                $("#exportModal").modal("close");
+            } else if (type === "csv") {
+                if (kind === "nodes") {
+                    var nodesAndEdges = "id,label,concept\r\n";
+                    for (var node in IGSM.thisNodes) {
+                        nodesAndEdges += IGSM.thisNodes[node].id + "," + IGSM.thisNodes[node].label + "," + IGSM.thisNodes[node].concept + "\r\n";
+                    }
+                    // COPY TO CLIPBOARD
+                    $("#hiddenclipboard").text(nodesAndEdges);
+                    copyToClipboard('#hiddenclipboard');
+                    // CLOSE MODAL
+                    $("#exportModal").modal("close");
+                } else {
+                    var nodesAndEdges = "from,to,role,width\r\n";
+                    for (var edge in IGSM.thisEdges) {
+                        if (!IGSM.thisEdges[edge].hidden) {
+                            nodesAndEdges += IGSM.thisEdges[edge].from + "," + IGSM.thisEdges[edge].to + "," + IGSM.thisEdges[edge].role + "," + IGSM.thisEdges[edge].width + "\r\n";
+                            if (nodesAndEdges.includes("Infinity")) {
+                                nodesAndEdges = nodesAndEdges.replace("Infinity", 1.0);
+                            }
+                        }
+                    }
+                    // COPY TO CLIPBOARD
+                    $("#hiddenclipboard").text(nodesAndEdges);
+                    copyToClipboard('#hiddenclipboard');
+                    // CLOSE MODAL
+                    $("#exportModal").modal("close");
+                }
+            } else if (type === "rdf") {
+                var nodesAndEdges = "";
+                for (var node in IGSM.thisNodes) {
+                    nodesAndEdges += "<" + IGSM.thisNodes[node].id + "> " + "<http://www.academic-meta-tool.xyz/instanceOf>" + " <" + IGSM.thisNodes[node].concept + "> .\r\n";
+                    nodesAndEdges += "<" + IGSM.thisNodes[node].id + "> " + "<http://www.w3.org/2000/01/rdf-schema#label>" + " \"" + IGSM.thisNodes[node].label + "\" .\r\n";
+                }
+                for (var edge in IGSM.thisEdges) {
+                    var emptyNode = "_:" + StrID();
+                    nodesAndEdges += emptyNode + " <http://www.w3.org/1999/02/22-rdf-syntax-ns#subject>" + " <" + IGSM.thisEdges[edge].from + "> .\r\n";
+                    nodesAndEdges += emptyNode + " <http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate>" + " <" + IGSM.thisEdges[edge].role + "> .\r\n";
+                    nodesAndEdges += emptyNode + " <http://www.w3.org/1999/02/22-rdf-syntax-ns#object>" + " <" + IGSM.thisEdges[edge].to + "> .\r\n";
+                    nodesAndEdges += emptyNode + " <http://www.academic-meta-tool.xyz/weight>" + " \"" + IGSM.thisEdges[edge].width + "\"^^<http://www.w3.org/2001/XMLSchema#integer> .\r\n";
+                    if (nodesAndEdges.includes("Infinity")) {
+                        nodesAndEdges = nodesAndEdges.replace("Infinity", 1.0);
+                    }
+                }
+                // COPY TO CLIPBOARD
+                $("#hiddenclipboard").text(nodesAndEdges);
+                copyToClipboard('#hiddenclipboard');
+                // CLOSE MODAL
+                $("#exportModal").modal("close");
+            } else if (type === "cypher") {
+                var nodesAndEdges = "";
+                var map = [];
+                var nodeIDs = [];
+                // CREATE NODE -> CREATE (shortID:Concept{label: 'text'})
+                for (var node in IGSM.thisNodes) {
+                    if (IGSM.thisNodes[node].concept.includes("Object")) {
+                        var nodeItem = {};
+                        nodeItem.id = IGSM.thisNodes[node].id;
+                        nodeItem.node = cypherNode;
+                        nodeItem.shortID = IGSM.thisNodes[node].id.replace(IGSM.prefix, "");
+                        nodeIDs.push(nodeItem.shortID);
+                        map.push(nodeItem);
+                        var cypherNode = "(" + nodeItem.shortID + ":Object{label: '" + IGSM.thisNodes[node].label + "'})";
+                        nodesAndEdges += "CREATE " + cypherNode + "\r\n";
+                    } else if (IGSM.thisNodes[node].concept.includes("Keyword")) {
+                        var nodeItem = {};
+                        nodeItem.id = IGSM.thisNodes[node].id;
+                        nodeItem.node = cypherNode;
+                        nodeItem.shortID = IGSM.thisNodes[node].id.replace(IGSM.prefix, "");
+                        nodeIDs.push(nodeItem.shortID);
+                        map.push(nodeItem);
+                        var cypherNode = "(" + nodeItem.shortID + ":Keyword{label: '" + IGSM.thisNodes[node].label + "'})";
+                        nodesAndEdges += "CREATE " + cypherNode + "\r\n";
+                    } else if (IGSM.thisNodes[node].concept.includes("Concept")) {
+                        var nodeItem = {};
+                        nodeItem.id = IGSM.thisNodes[node].id;
+                        nodeItem.node = cypherNode;
+                        nodeItem.shortID = IGSM.thisNodes[node].id.replace(IGSM.prefix, "");
+                        nodeIDs.push(nodeItem.shortID);
+                        map.push(nodeItem);
+                        var cypherNode = "(" + nodeItem.shortID + ":Concept{label: '" + IGSM.thisNodes[node].label + "'})";
+                        nodesAndEdges += "CREATE " + cypherNode + "\r\n";
+                    }
+                }
+                // MERGE NODES AS EDGE -> MERGE (shortID)-[:ROLE{width:width}]->(shortID)
+                for (var edge in IGSM.thisEdges) {
+                    if (IGSM.thisEdges[edge].role.includes("hasDepiction") && !IGSM.thisEdges[edge].hidden) {
+                        var cypherEdge = "(*)-[:HAS_DEPICTION{width:%}]->(**)";
+                        for (var item in map) {
+                            if (map[item].id === IGSM.thisEdges[edge].from) {
+                                cypherEdge = cypherEdge.replace("*", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                            if (map[item].id === IGSM.thisEdges[edge].to) {
+                                cypherEdge = cypherEdge.replace("**", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                        }
+                        nodesAndEdges += "MERGE " + cypherEdge + "\r\n";
+                    }
+                    if (IGSM.thisEdges[edge].role.includes("isDepictionOf") && !IGSM.thisEdges[edge].hidden) {
+                        var cypherEdge = "(*)-[:IS_DEPICTION_OF{width:%}]->(**)";
+                        for (var item in map) {
+                            if (map[item].id === IGSM.thisEdges[edge].from) {
+                                cypherEdge = cypherEdge.replace("*", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                            if (map[item].id === IGSM.thisEdges[edge].to) {
+                                cypherEdge = cypherEdge.replace("**", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                        }
+                        nodesAndEdges += "MERGE " + cypherEdge + "\r\n";
+                    }
+                    if (IGSM.thisEdges[edge].role.includes("matchesWith") && !IGSM.thisEdges[edge].hidden) {
+                        var cypherEdge = "(*)-[:MATCHES_WITH{width:%}]->(**)";
+                        for (var item in map) {
+                            if (map[item].id === IGSM.thisEdges[edge].from) {
+                                cypherEdge = cypherEdge.replace("*", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                            if (map[item].id === IGSM.thisEdges[edge].to) {
+                                cypherEdge = cypherEdge.replace("**", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                        }
+                        nodesAndEdges += "MERGE " + cypherEdge + "\r\n";
+                    }
+                    if (IGSM.thisEdges[edge].role.includes("matchedBy") && !IGSM.thisEdges[edge].hidden) {
+                        var cypherEdge = "(*)-[:MATCHED_BY{width:%}]->(**)";
+                        for (var item in map) {
+                            if (map[item].id === IGSM.thisEdges[edge].from) {
+                                cypherEdge = cypherEdge.replace("*", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                            if (map[item].id === IGSM.thisEdges[edge].to) {
+                                cypherEdge = cypherEdge.replace("**", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                        }
+                        nodesAndEdges += "MERGE " + cypherEdge + "\r\n";
+                    }
+                    if (IGSM.thisEdges[edge].role.includes("broaderThan") && !IGSM.thisEdges[edge].hidden) {
+                        var cypherEdge = "(*)-[:BROADER_THAN{width:%}]->(**)";
+                        for (var item in map) {
+                            if (map[item].id === IGSM.thisEdges[edge].from) {
+                                cypherEdge = cypherEdge.replace("*", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                            if (map[item].id === IGSM.thisEdges[edge].to) {
+                                cypherEdge = cypherEdge.replace("**", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                        }
+                        nodesAndEdges += "MERGE " + cypherEdge + "\r\n";
+                    }
+                    if (IGSM.thisEdges[edge].role.includes("narrowerThan") && !IGSM.thisEdges[edge].hidden) {
+                        var cypherEdge = "(*)-[:NARROWER_THAN{width:%}]->(**)";
+                        for (var item in map) {
+                            if (map[item].id === IGSM.thisEdges[edge].from) {
+                                cypherEdge = cypherEdge.replace("*", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                            if (map[item].id === IGSM.thisEdges[edge].to) {
+                                cypherEdge = cypherEdge.replace("**", map[item].shortID);
+                                cypherEdge = cypherEdge.replace("%", IGSM.thisEdges[edge].width);
+                                if (cypherEdge.includes("Infinity")) {
+                                    cypherEdge = cypherEdge.replace("Infinity", 1.0);
+                                }
+                            }
+                        }
+                        nodesAndEdges += "MERGE " + cypherEdge + "\r\n";
+                    }
+                }
+                // ADD RETURN ALL NODES
+                var returnCall = "RETURN ";
+                for (var nodeID in nodeIDs) {
+                    returnCall += nodeIDs[nodeID] + ",";
+                }
+                nodesAndEdges += returnCall.slice(0, -1);
+                // COPY TO CLIPBOARD
+                $("#hiddenclipboard").text(nodesAndEdges);
+                copyToClipboard('#hiddenclipboard');
+                // CLOSE MODAL
+                $("#exportModal").modal("close");
+            }
+        }
+        var loadJSONGraphInApp = function() {
+            var json = JSON.parse($("#json").val());
+            for (var node in json.nodes) {
+                IGSM.amt.addExistingIndividual(json.nodes[node].id, json.nodes[node].label, json.nodes[node].concept);
+            }
+            for (var edge in json.edges) {
+                IGSM.amt.addExistingAssertion(json.edges[edge].id, json.edges[edge].role, json.edges[edge].from, json.edges[edge].to, json.edges[edge].width);
+            }
+            update();
+            $("#loadModal").modal("close");
+        }
+    </script>
+</head>
+
+<body>
+    <div id="graph" class="col s12"></div>
+    <div id="footer" class="page-footer col s12 blue lighten-3">
+        <div class="container">
+            <div class="row">
+                <div id="props" class="col s3 left-align">
+                    <a class="btn-floating btn-large black" onclick="info()" title="about AMT"><i class="material-icons">info_outline</i></a>
+                    <a class="btn-floating btn-large black" onclick="propModal()" title="switch example"><i class="material-icons">sync</i></a>
+                    <a class="btn-floating btn-large black" onclick="exportOptions()" title="download data"><i class="material-icons">file_download</i></a>
+                </div>
+                <div id="buttons" class="col s4 right-align">
+                    <a class="btn-floating btn-large blue" id="r-but" onclick="edit()" title="show reasoning data"><i class="material-icons">flash_on</i></a>
+                    <a class="btn-floating btn-large normal blue" id="e-but" onclick="edit()" title="show input data"><i class="material-icons">input</i></a>
+                </div>
+                <div id="store" class="col s4 left-align">
+                    <div><a class="btn-floating btn-large edit red" onclick="cancel()" title="Cancel changes"><i class="material-icons">cancel</i></a></div>
+                    <div id="save"><a class="btn-floating btn-large normal black" onclick="save()" title="Save changes"><i class="material-icons">save</i></a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="modal" class="modal">
+        <input id="uri" hidden />
+        <input id="concept" hidden />
+        <div class="modal-content">
+            <div class="row">
+                <div class="input-field col s9">
+                    <input id="label" type="text" placeholder="-" />
+                    <label for="label">Label</label>
+                </div>
+                <div class="col s3 right-align">
+                    <a class="btn-floating btn-large red" onclick="remove()" title="Delete node"><i class="material-icons">delete</i></a>
+                    <a class="btn-floating btn-large green" onclick="saveEdit()" title="Save changes"><i class="material-icons">save</i></a>
+                    <a class="btn-floating btn-large blue" onclick="cancelEdit()" title="Cancel changes"><i class="material-icons">cancel</i></a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="input-field col s12">
+                    <select id="role"></select>
+                    <label for="role">Relation</label>
+                </div>
+            </div>
+            <div class="row">
+                <table class="bordered col s12">
+                    <thead>
+                        <tr>
+                            <th>Individuum</th>
+                            <th>Gewicht</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div id="info" class="modal">
+        <div class="modal-content">
+            <h4>AMT. Academic Meta Tool. CAA 2018 Example.</h4>
+            <br>
+            <p><b>About AMT</b></p>
+            <br>
+            <p>AMT provides the ability to add weights to edges, to express the vagueness of that edge. So, a relationship between two nodes is depending on its degree. This degree, the edge weight, is usually expressed in percentages. In addition, AMT includes
+                graph-based reasoning. Here, a prototype of AMT is available as a web application.</p>
+            <br>
+            <p><b>Nodes</b></p>
+            <br>
+            <p style="margin-top: 10px">
+                <div class="chip white lighten-4">Object</div>
+                <img height="40" src="img/O41485.jpg">
+                <div class="chip white lighten-4">Keyword</div>
+                <img height="40" src="img/keyword.png">
+                <div class="chip white lighten-4">Concept</div>
+                <div class="chip blue lighten-4">eh:xyz</div>
+            </p>
+            <br>
+            <p><b>Edges</b></p>
+            <br>
+            <p style="margin-top: 10px">
+                <div class="chip red lighten-4">has depiction, dashed</div>
+                <div class="chip blue lighten-4">matches with, dashed</div>
+                <div class="chip green lighten-4">is broader than, dashed</div>
+            </p>
+            <br>
+            <p><b>How to?</b></p>
+            <p>
+                First, the initial input data is displayed. Click <i class="material-icons tiny">add</i> to add more objects, keywords or concepts or modify existing data by clicking on the node. For visualise the reasoning data click <i class="material-icons tiny">flash_on</i>.
+                Relations created by reasoning are displayed red. Change the example by clicking <i class="material-icons tiny">sync</i> and download the data by clicking <i class="material-icons tiny">file_download</i>.
+            </p>
+            <br>
+            <p><b>Info</b></p>
+            <br>
+            <p><a href="https://rgzm.github.io/amt-caa2018/"><img src="https://img.shields.io/badge/amt--caa2018-git repo-orange.svg?style=flat"></a>&nbsp;<a href="https://doi.org/10.5281/zenodo.1200112"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1200112.svg" alt="DOI"></a></p>
+            <br>
+            <p><b>About the Creators and the Data</b></p>
+            <br>
+            <p>* AMT Software by Florian Thiery, Martin Unold (i3mainz).<br>* Data by Florian Thiery and Dr. Allard Mees (RGZM).</p>
+        </div>
+    </div>
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <h4>Copy Edges and Nodes to Clipboard</h4>
+            <br><br>
+            <table class="centered stripped">
+                <thead>
+                    <tr>
+                        <th width="25%">JSON array</th>
+                        <th width="25%">CSV as edges,nodes</th>
+                        <th width="25%">CYPHER statements</th>
+                        <th width="25%">RDF</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><a class="btn-floating btn-large green" onclick="exportData('json')" title="Copy Edges and Nodes as JSON"><i class="material-icons">code</i></a></td>
+                        <td><a class="btn-floating btn-large green" onclick="exportData('csv','nodes')" title="Copy Nodes as CSV"><i class="material-icons">fiber_manual_record</i></a> &nbsp;&nbsp;
+                            <a class="btn-floating btn-large green" onclick="exportData('csv','edges')" title="Copy Edges as CSV"><i class="material-icons">arrow_forward</i></a></td>
+                        <td><a class="btn-floating btn-large green" onclick="exportData('cypher')" title="Copy Edges and Nodes as CYPHER"><i class="material-icons">input</i></a></td>
+                        <td><a class="btn-floating btn-large green" onclick="exportData('rdf')" title="Copy Edges as RDF"><i class="material-icons">share</i></a></td>
+                    </tr>
+                </tbody>
+            </table>
+            <textarea id="hiddenclipboard" hidden></textarea>
+        </div>
+    </div>
+    <div id="propertiesModal" class="modal">
+        <div class="modal-content">
+            <h4>Please choose an example:</h4>
+            <br>
+            <form class="col s12">
+                <div class="row">
+                    <div class="input-field col s11">
+                        <select id="ontology">
+								<option value="military" selected>Ship function: Military Vessel?</option>
+								<option value="transport">Ship function: Transport Vessel?</option>
+								<option value="lateenfore">Sailing gear: lateen sail or fore sail?</option>
+								<option value="sailedrowed">Ship propulsion: sailed or rowed?</option>
+								<option value="nero">Is it Nero?</option>
+							</select>
+                        <label>Example</label>
+                    </div>
+                    <div class="col s1">
+                        <a class="btn-floating btn-large green" onclick="switchOntology()" title="load"><i class="material-icons">check</i></a>
+                    </div>
+                </div>
+            </form>
+            <br>
+            <h4>Info</h4>
+            <h5>Ship function: Military Vessel or Transport Vessel?</h5><img src="img\NeumagenMonument1.jpg" height="200">
+            <h5>Sailing gear: lateen sail or fore sail?</h5><img src="img\NarbonneRelief7.jpg" height="200">
+            <h5>Ship propulsion: sailed or rowed?</h5><img src="img\O41650.jpg" height="200">
+            <h5>Is it Nero?</h5><img src="img\O41485.jpg" height="200">
+            <br>
+        </div>
+    </div>
+    <div id="graphPropModal" class="modal">
+        <div class="modal-content">
+            <h4>Graph Properties</h4>
+            <br>
+            <p><input name="group1" type="radio" class="with-gap" id="showAllInverse" value="showAllInverse" /><label for="showAllInverse">show all inverse relations</label></p>
+            <p><input name="group1" type="radio" class="with-gap" id="showNoInverse" value="showNoInverse" checked /><label for="showNoInverse">show no inverse relations</label></p>
+            <br>
+            <center><a class="btn-floating btn-large green" onclick="reloadGraphWithProperties()" title="reload"><i class="material-icons">check</i></a></center>
+        </div>
+    </div>
+</body>
+
+</html>
