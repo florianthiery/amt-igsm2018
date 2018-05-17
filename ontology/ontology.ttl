@@ -1,0 +1,111 @@
+@prefix amt: <http://academic-meta-tool.xyz/vocab#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix igsm: <http://github.com/florianthiery/amt-igsm2018#> .
+
+# AMT Ontology - Leonard Edition
+
+amt:Concept rdfs:subClassOf rdfs:Class .
+amt:Role rdfs:subClassOf rdf:Property .
+amt:Axiom rdfs:subclassOf rdfs:Class .
+amt:InferenceAxiom rdfs:subClassOf amt:Axiom .
+amt:IntegrityAxiom rdfs:subClassOf amt:Axiom .
+amt:RoleChainAxiom rdfs:subClassOf amt:InferenceAxiom .
+amt:InverseAxiom rdfs:subClassOf amt:InferenceAxiom .
+amt:DisjointAxiom rdfs:subClassOf amt:IntegrityAxiom .
+amt:SelfDisjointAxiom rdfs:subClassOf amt:IntegrityAxiom .
+amt:Logic rdfs:subClassOf rdfs:Class .
+amt:LukasiewiczLogic rdf:type amt:Logic .
+amt:ProductLogic rdf:type amt:Logic .
+amt:GoedelLogic rdf:type amt:Logic .
+
+# IGSM2018 ontology
+
+# concepts
+
+igsm:Place rdf:type amt:Concept .
+igsm:Place rdfs:label "Place" .
+igsm:Place amt:placeholder "place name" .
+
+igsm:Resource rdf:type amt:Concept .
+igsm:Resource rdfs:label "Resource" .
+igsm:Resource amt:placeholder "resource identifier" .
+
+# roles
+
+igsm:inside rdf:type amt:Role .
+igsm:inside rdfs:label "is inside of" .
+igsm:inside rdfs:domain igsm:Place .
+igsm:inside rdfs:range igsm:Place .
+
+igsm:contains rdf:type amt:Role .
+igsm:contains rdfs:label "contains" .
+igsm:contains rdfs:domain igsm:Place .
+igsm:contains rdfs:range igsm:Place .
+
+igsm:south rdf:type amt:Role .
+igsm:south rdfs:label "located south of" .
+igsm:south rdfs:domain igsm:Place .
+igsm:south rdfs:range igsm:Place .
+
+igsm:north rdf:type amt:Role .
+igsm:north rdfs:label "located north of" .
+igsm:north rdfs:domain igsm:Place .
+igsm:north rdfs:range igsm:Place .
+
+igsm:east rdf:type amt:Role .
+igsm:east rdfs:label "located east of" .
+igsm:east rdfs:domain igsm:Place .
+igsm:east rdfs:range igsm:Place .
+
+igsm:west rdf:type amt:Role .
+igsm:west rdfs:label "located west of" .
+igsm:west rdfs:domain igsm:Place .
+igsm:west rdfs:range igsm:Place .
+
+igsm:sameAs rdf:type amt:Role .
+igsm:sameAs rdfs:label "is the same as" .
+igsm:sameAs rdfs:domain igsm:Place .
+igsm:sameAs rdfs:range igsm:Resource .
+
+# axioms
+
+# RoleChainAxiom
+
+igsm:AxiomRCA01 rdf:type amt:RoleChainAxiom .
+igsm:AxiomRCA01 amt:antecedent1 igsm:contains .
+igsm:AxiomRCA01 amt:antecedent2 igsm:contains .
+igsm:AxiomRCA01 amt:consequent igsm:contains .
+igsm:AxiomRCA01 amt:logic amt:ProductLogic .
+
+igsm:AxiomRCA01i rdf:type amt:RoleChainAxiom .
+igsm:AxiomRCA01i amt:antecedent1 igsm:inside .
+igsm:AxiomRCA01i amt:antecedent2 igsm:inside .
+igsm:AxiomRCA01i amt:consequent igsm:inside .
+igsm:AxiomRCA01i amt:logic amt:ProductLogic .
+
+# InverseAxiom
+
+igsm:AxiomIA01 rdf:type amt:InverseAxiom .
+igsm:AxiomIA01 amt:antecedent igsm:inside .
+igsm:AxiomIA01 amt:inverse igsm:contains .
+
+igsm:AxiomIA01i rdf:type amt:InverseAxiom .
+igsm:AxiomIA01i amt:antecedent igsm:contains .
+igsm:AxiomIA01i amt:inverse igsm:inside .
+
+igsm:AxiomIA02 rdf:type amt:InverseAxiom .
+igsm:AxiomIA02 amt:antecedent igsm:south .
+igsm:AxiomIA02 amt:inverse igsm:north .
+
+igsm:AxiomIA02i rdf:type amt:InverseAxiom .
+igsm:AxiomIA02i amt:antecedent igsm:north .
+igsm:AxiomIA02i amt:inverse igsm:south .
+
+igsm:AxiomIA03 rdf:type amt:InverseAxiom .
+igsm:AxiomIA03 amt:antecedent igsm:east .
+igsm:AxiomIA03 amt:inverse igsm:west .
+
+igsm:AxiomIA03i rdf:type amt:InverseAxiom .
+igsm:AxiomIA03i amt:antecedent igsm:west .
+igsm:AxiomIA03i amt:inverse igsm:east .
